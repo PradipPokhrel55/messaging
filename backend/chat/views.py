@@ -70,11 +70,6 @@ def room(request, name, password):
             image = None
         chat = Chat.objects.create(user=user, room=room, message=message, image=image)
         chat.save()
-        # chat = ChatSerializer(data=request)
-        # chat.user = user
-        # chat.room = room
-        # if chat.is_valid():
-        #     chat.save()
         return JsonResponse({"status": "201"})
 
 @api_view(['POST'])

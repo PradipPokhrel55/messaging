@@ -16,5 +16,4 @@ class Chat(models.Model):
     message = models.TextField(blank=True)
     image = ResizedImageField(force_format='WEBP', size=None,scale=0.5, quality=75, upload_to='images', blank=True, null=True)
 
-    # def __str__(self):
-    #     return str(self.room)
+   
