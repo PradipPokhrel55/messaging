@@ -33,6 +33,8 @@ const HomePage = () => {
     };
 
     return (
+        
+
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4">
             <div className="w-full max-w-xl bg-white p-8 rounded-2xl shadow-xl">
                 <div className="flex justify-between items-center mb-6">
@@ -93,7 +95,7 @@ const HomePage = () => {
                         />
                         <button
                             type="submit"
-                            className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition duration-200"
+                            className="w-full bg-red-400 text-black-50 py-2 rounded-lg hover:bg-red-700 transition duration-200"
                         >
                             Create Room
                         </button>

@@ -13,7 +13,7 @@ const Chat = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            await fetch(`http://localhost:8000/room/${name}/${password}`, {
+            await fetch(`http://localhost:8000/room/${name}/${password}/`, {
                 method: 'GET',
                 headers: {
                     Authorization: `Bearer ${authTokens.access}`,
@@ -28,14 +28,14 @@ const Chat = () => {
         }, 1000);
         fetchData();
         return () => clearInterval(timer);
-    }, []);
+    }, [name, password, authTokens.access, navigateTo]);
 
     const Send = async (e) => {
         e.preventDefault();
         let data = new FormData();
         data.append('message', e.target.message.value);
         data.append('image', e.target.image.files[0]);
-        await axios(`http://localhost:8000/room/${name}/${password}`, {
+        await axios(`http://localhost:8000/room/${name}/${password}/`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
@@ -48,10 +48,28 @@ const Chat = () => {
         messagesContainer.scrollTo(0, 0);
     };
 
+    const deleteMessage = async (id) => {
+        const confirmed = window.confirm("Are you sure you want to delete this message?");
+        if (!confirmed) return;
+
+        try {
+            await fetch(`http://localhost:8000/message/delete/${id}/`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${authTokens.access}`,
+                },
+            });
+            // Remove the message from the current list
+            setMessages((prev) => prev.filter((msg) => msg.id !== id));
+        } catch (error) {
+            console.error("Failed to delete message:", error);
+        }
+    };
+
     return (
         <div className="flex flex-col min-h-screen bg-black-100">
             <nav className="flex items-center gap-4 px-4 py-3 bg-black shadow">
-                <Link to="/" className="hover:opacity-75">
+                <Link to="/" className="hover:opacity-75 bg-green-500 z-1">
                     <img src={Back} alt="Back" width={32} height={32} />
                 </Link>
                 <h2 className="text-xl font-semibold text-gray-800">{name}</h2>
@@ -82,6 +100,14 @@ const Chat = () => {
                                     className="mt-2 rounded-lg w-auto h-32 object-cover"
                                     loading="lazy"
                                 />
+                            )}
+                            {user.username === message.user && (
+                                <button
+                                    onClick={() => deleteMessage(message.id)}
+                                    className="mt-2 text-xs text-red-600 hover:underline"
+                                >
+                                    Delete
+                                </button>
                             )}
                         </div>
                     ))}

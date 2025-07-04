@@ -39,7 +39,7 @@ const RegisterPage = () => {
                         to="/login"
                         className="text-blue-600 hover:underline text-sm"
                     >
-                        Go to Login
+                        Login
                     </Link>
                 </div>
                 <form onSubmit={Submit} className="space-y-4">

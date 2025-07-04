@@ -71,6 +71,23 @@ def room(request, name, password):
         chat = Chat.objects.create(user=user, room=room, message=message, image=image)
         chat.save()
         return JsonResponse({"status": "201"})
+    
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def deleteMessage(request, message_id):
+    try:
+        chat = Chat.objects.get(id=message_id)
+        
+        # Ensure only the message owner or admin can delete
+        if chat.user != request.user and not request.user.is_staff:
+            return JsonResponse({"status": "403", "message": "You don't have permission to delete this message."})
+        
+        chat.delete()
+        return JsonResponse({"status": "200", "message": "Message deleted successfully."})
+
+    except Chat.DoesNotExist:
+        return JsonResponse({"status": "404", "message": "Message not found."})
+
 
 @api_view(['POST'])
 def createUser(request):

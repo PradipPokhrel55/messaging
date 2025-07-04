@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import PrivateRoute from './utils/PrivateRoute'
 import { AuthProvider } from './context/AuthContext'
 
-import "./root.css"
+import "./index.css"
 
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
