@@ -1,25 +1,10 @@
-# messager 
+# messanger 
 
-A full-stack messaging application built with **React** for the frontend and **Django** (Django REST Framework) for the backend. This platform supports product browsing, cart management, user authentication, and order processing.
-
----
-
-## 🚀 Features
-
-### 🖥️ Frontend (React)
-- Product listing and detail views
-- Shopping cart functionality
-- User authentication (login/register)
-- Checkout and order confirmation
-- Responsive and modern UI (Tailwind CSS)
-
-### 🔧 Backend (Django)
-- RESTful API for products, users, and orders
-- Token-based authentication (JWT)
-- Admin dashboard for managing products and orders
-- Secure user management
+A full-stack messaging application built with **React** for the frontend and **Django** (Django REST Framework) for the backend. 
 
 ---
+
+
 
 ## 🧱 Tech Stack
 
