@@ -1,6 +1,6 @@
-# 🛒 E-Commerce Platform
+# messager 
 
-A full-stack e-commerce web application built with **React** for the frontend and **Django** (Django REST Framework) for the backend. This platform supports product browsing, cart management, user authentication, and order processing.
+A full-stack messaging application built with **React** for the frontend and **Django** (Django REST Framework) for the backend. This platform supports product browsing, cart management, user authentication, and order processing.
 
 ---
 
