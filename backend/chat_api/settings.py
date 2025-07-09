@@ -104,8 +104,10 @@ MIDDLEWARE = [
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
+    'https://idyllic-heliotrope-5ae5ef.netlify.app/',
     'http://localhost:5174'
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'chat_api.urls'
 
