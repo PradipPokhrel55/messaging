@@ -2,6 +2,8 @@ import React, { useContext } from 'react';
 import AuthContext from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const RegisterPage = () => {
     const { loginUser } = useContext(AuthContext);
 
@@ -12,7 +14,7 @@ const RegisterPage = () => {
             password: e.target.password.value,
         };
 
-        await fetch('http://localhost:8000/user/create', {
+        await fetch(`${API_BASE_URL}/user/create`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

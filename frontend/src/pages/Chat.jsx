@@ -5,6 +5,8 @@ import AuthContext from '../context/AuthContext';
 import Back from '../assets/back.svg';
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const Chat = () => {
     const { user, authTokens } = useContext(AuthContext);
     const { name, password } = useParams();
@@ -13,7 +15,7 @@ const Chat = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            await fetch(`http://localhost:8000/room/${name}/${password}/`, {
+            await fetch(`${API_BASE_URL}/room/${name}/${password}/`, {
                 method: 'GET',
                 headers: {
                     Authorization: `Bearer ${authTokens.access}`,
@@ -35,7 +37,7 @@ const Chat = () => {
         let data = new FormData();
         data.append('message', e.target.message.value);
         data.append('image', e.target.image.files[0]);
-        await axios(`http://localhost:8000/room/${name}/${password}/`, {
+        await axios(`${API_BASE_URL}/room/${name}/${password}/`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
@@ -53,13 +55,12 @@ const Chat = () => {
         if (!confirmed) return;
 
         try {
-            await fetch(`http://localhost:8000/message/delete/${id}/`, {
+            await fetch(`${API_BASE_URL}/message/delete/${id}/`, {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${authTokens.access}`,
                 },
             });
-            // Remove the message from the current list
             setMessages((prev) => prev.filter((msg) => msg.id !== id));
         } catch (error) {
             console.error("Failed to delete message:", error);
@@ -95,7 +96,7 @@ const Chat = () => {
                             <p className="text-gray-800 break-words">{message.message}</p>
                             {message.image && (
                                 <img
-                                    src={`http://localhost:8000${message.image}`}
+                                    src={`${API_BASE_URL}${message.image}`}
                                     alt="uploaded"
                                     className="mt-2 rounded-lg w-auto h-32 object-cover"
                                     loading="lazy"

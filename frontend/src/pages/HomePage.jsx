@@ -2,6 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import AuthContext from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const HomePage = () => {
     const { user, authTokens, logoutUser } = useContext(AuthContext);
     const navigateTo = useNavigate();
@@ -13,7 +15,7 @@ const HomePage = () => {
 
     const CreateRoom = async (e) => {
         e.preventDefault();
-        await fetch(`http://localhost:8000/room/`, {
+        await fetch(`${API_BASE_URL}/room/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -33,8 +35,6 @@ const HomePage = () => {
     };
 
     return (
-        
-
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4">
             <div className="w-full max-w-xl bg-white p-8 rounded-2xl shadow-xl">
                 <div className="flex justify-between items-center mb-6">
