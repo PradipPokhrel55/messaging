@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 
 import Back from '../assets/back.svg';
+import VideoCall from '../utils/video.jsx';
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -12,6 +13,7 @@ const Chat = () => {
     const { name, password } = useParams();
     const navigateTo = useNavigate();
     const [messages, setMessages] = useState([]);
+    const [showVideo, setShowVideo] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -74,6 +76,12 @@ const Chat = () => {
                     <img src={Back} alt="Back" width={32} height={32} />
                 </Link>
                 <h2 className="text-xl font-semibold text-gray-800">{name}</h2>
+                <button
+                    onClick={() => setShowVideo(true)}
+                    className="ml-4 px-3 py-1 bg-purple-600 text-white rounded hover:opacity-90"
+                >
+                    Start Video Call
+                </button>
             </nav>
 
             <div
@@ -138,6 +146,22 @@ const Chat = () => {
                     Send
                 </button>
             </form>
+            {showVideo && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="bg-white rounded-lg p-4 w-[90%] md:w-3/4 lg:w-2/3">
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-semibold">Video Call - {name}</h3>
+                            <button
+                                onClick={() => setShowVideo(false)}
+                                className="px-2 py-1 bg-red-500 text-white rounded"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <VideoCall roomId={name} userId={user?.id} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

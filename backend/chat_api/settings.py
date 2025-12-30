@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'chat',
     'rest_framework_simplejwt.token_blacklist',
+    'channels',
     'corsheaders',
 ]
 
@@ -104,7 +105,7 @@ MIDDLEWARE = [
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
-    'https://idyllic-heliotrope-5ae5ef.netlify.app/',
+     "http://127.0.0.1:3000",
     'http://localhost:5174'
 ]
 CORS_ALLOW_ALL_ORIGINS = True
@@ -126,7 +127,7 @@ TEMPLATES = [
         },
     },
 ]
-
+ASGI_APPLICATION = "chat_api.asgi.application"
 WSGI_APPLICATION = 'chat_api.wsgi.application'
 
 
@@ -139,6 +140,16 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],  # Use "redis" if using Docker container name
+        },
+    },
+}
+
 
 
 # Password validation
