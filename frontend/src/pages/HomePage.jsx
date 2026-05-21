@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import AuthContext from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
 const HomePage = () => {
     const { user, authTokens, logoutUser } = useContext(AuthContext);
