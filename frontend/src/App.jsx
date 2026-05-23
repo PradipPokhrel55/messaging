@@ -7,16 +7,18 @@ import "./index.css"
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import FaceAuth from './pages/FaceAuth'
 import Chat from './pages/Chat'
 
 function App() {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <Routes>
           <Route element={<PrivateRoute><HomePage /></PrivateRoute>} path="/"/>
           <Route element={<LoginPage />} path="/login"/>
           <Route element={<RegisterPage />} path="/register"/>
+          <Route element={<FaceAuth />} path="/face-auth" />
           <Route element={<PrivateRoute><Chat /></PrivateRoute>} path="/:name/:password"/>
         </Routes>
       </AuthProvider>

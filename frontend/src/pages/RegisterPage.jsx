@@ -65,6 +65,9 @@ const RegisterPage = () => {
                     >
                         Register
                     </button>
+                    <div className="text-center text-sm text-gray-600">
+                        or <Link to="/face-auth" className="text-blue-600 hover:underline">enroll with face</Link>
+                    </div>
                 </form>
             </div>
         </div>

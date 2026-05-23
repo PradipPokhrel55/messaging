@@ -43,6 +43,9 @@ const LoginPage = () => {
                 >
                     Login
                 </button>
+                <div className="text-center text-sm text-gray-600">
+                    or <Link to="/face-auth" className="text-blue-600 hover:underline">login with face</Link>
+                </div>
             </form>
         </div>
     )

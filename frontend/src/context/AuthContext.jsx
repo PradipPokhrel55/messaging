@@ -50,6 +50,13 @@ export const AuthProvider = ({children}) => {
         localStorage.removeItem('authTokens');
     };
 
+    let loginWithTokens = (data) => {
+        setAuthTokens(data);
+        setUser(jwt_decode(data.access));
+        localStorage.setItem('authTokens', JSON.stringify(data));
+        navigateTo('/');
+    };
+
     let updateToken = async () => {
         let response = await fetch(`${API_BASE_URL}/api/token/refresh/`, {
             method: 'POST',
@@ -78,6 +85,7 @@ export const AuthProvider = ({children}) => {
         user: user,
         authTokens: authTokens,
         loginUser: loginUser,
+        loginWithTokens: loginWithTokens,
         logoutUser: logoutUser,
     };
 
