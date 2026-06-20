@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.http import JsonResponse
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 import json
 
@@ -54,8 +55,54 @@ def room(request, name, password):
     room = Room.objects.get(name=name, password=password)
 
     if request.method == "GET":
-        messages = room.room.order_by('id')
-        serializer = ChatSerializer(messages, many=True, context={'request': request})
+        # Support pagination for chat messages.
+        # Query params supported:
+        # - limit: number of messages to return (default 50, max 200)
+        # - before: return messages with id < before (for loading older messages)
+        # - after: return messages with id > after (for new messages)
+        try:
+            limit = int(request.GET.get('limit', 50))
+        except (TypeError, ValueError):
+            limit = 50
+
+        if limit <= 0:
+            limit = 50
+        limit = min(limit, 200)
+
+        before = request.GET.get('before')
+        after = request.GET.get('after')
+
+        messages_qs = room.room.order_by('id')
+
+        if before is not None:
+            # load older messages (ids less than `before`) - return most recent first then reverse
+            try:
+                before_id = int(before)
+            except (TypeError, ValueError):
+                before_id = None
+
+            if before_id is not None:
+                msgs = messages_qs.filter(id__lt=before_id).order_by('-id')[:limit]
+                msgs = list(reversed(msgs))
+                serializer = ChatSerializer(msgs, many=True, context={'request': request})
+                return Response(serializer.data)
+
+        if after is not None:
+            # load new messages after a given id
+            try:
+                after_id = int(after)
+            except (TypeError, ValueError):
+                after_id = None
+
+            if after_id is not None:
+                msgs = messages_qs.filter(id__gt=after_id).order_by('id')[:limit]
+                serializer = ChatSerializer(msgs, many=True, context={'request': request})
+                return Response(serializer.data)
+
+        # default: return latest `limit` messages
+        msgs = messages_qs.order_by('-id')[:limit]
+        msgs = list(reversed(msgs))
+        serializer = ChatSerializer(msgs, many=True, context={'request': request})
         return Response(serializer.data)
 
     if request.method == "DELETE":
@@ -70,6 +117,7 @@ def room(request, name, password):
 
         Chat.objects.create(user=request.user, room=room, message=message, image=image)
         return JsonResponse({"status": "201"}, status=201)
+
     
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
@@ -220,7 +268,6 @@ def face_login(request):
 def call_offer(request, name, password):
     room = Room.objects.get(name=name, password=password)
     session = get_active_call_session(room)
-
     if request.method == 'GET':
         if not session or not session.offer:
             return JsonResponse({'offer': None}, status=404)
@@ -243,7 +290,11 @@ def call_offer(request, name, password):
 def call_answer(request, name, password):
     room = Room.objects.get(name=name, password=password)
     session = get_active_call_session(room)
-
+    Chat.objects.create(
+        user=request.user,
+        room = room,
+        message="Call started at "+ str(timezone.now())
+    )
     if not session:
         return JsonResponse({'error': 'No active call session.'}, status=404)
 
