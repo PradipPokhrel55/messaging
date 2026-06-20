@@ -1,3 +1,5 @@
 /backend/venv
 static/
 venv/
+./venv
+venv
