@@ -16,3 +16,5 @@ sqlparse==0.4.3
 typing_extensions==4.4.0
 tzdata==2022.5
 whitenoise==6.9.0
+torch>=2.0.0
+facenet-pytorch==2.6.0

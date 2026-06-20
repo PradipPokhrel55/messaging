@@ -2,7 +2,7 @@ import base64
 from io import BytesIO
 
 import numpy as np
-import torch
+
 from PIL import Image
 from facenet_pytorch import InceptionResnetV1, MTCNN
 
@@ -11,6 +11,7 @@ _resnet = None
 
 
 def get_device():
+    import torch
     return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
@@ -38,6 +39,7 @@ def decode_base64_image(data_url):
 
 
 def compute_embedding_from_base64(data_url):
+    import torch
     image = decode_base64_image(data_url)
     mtcnn = get_mtcnn()
     face_tensor = mtcnn(image)
