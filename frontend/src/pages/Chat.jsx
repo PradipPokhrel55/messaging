@@ -16,6 +16,10 @@ const Chat = () => {
     const navigateTo = useNavigate();
 
     const [messages, setMessages] = useState([]);
+    const messagesRef = useRef(messages);
+    const [initialized, setInitialized] = useState(false);
+    const [hasMoreOlder, setHasMoreOlder] = useState(true);
+    const [isLoadingOlder, setIsLoadingOlder] = useState(false);
 
     const [isCalling, setIsCalling] = useState(false);
     const [isCaller, setIsCaller] = useState(false);
@@ -32,8 +36,157 @@ const Chat = () => {
     const pcRef = useRef(null);
 
     const pollingRef = useRef(null);
+    const localStreamRef = useRef(null)
 
-    // FETCH MESSAGES
+    const messagesContainerRef = useRef(null);
+    const initialLoadRef = useRef(true);
+    const [autoScroll, setAutoScroll] = useState(true);
+
+    const handleScroll = () => {
+        const el = messagesContainerRef.current;
+        if (!el) return;
+        const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        // consider user at bottom if within 100px
+        const isAtBottom = distanceFromBottom <= 100;
+        setAutoScroll(isAtBottom);
+        // if user scrolls near the top, load older messages
+        if (el.scrollTop <= 120 && hasMoreOlder && !isLoadingOlder) {
+            loadOlderMessages();
+        }
+    };
+
+    const PAGE_SIZE = 50;
+
+    const fetchLatestMessages = async () => {
+        try {
+            const resp = await fetch(`${API_BASE_URL}/room/${name}/${password}/?limit=${PAGE_SIZE}`, {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${authTokens?.access}` },
+            });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            setMessages(data);
+            messagesRef.current = data;
+            // jump to bottom instantly before revealing UI to avoid visible scroll animation
+            requestAnimationFrame(() => {
+                const el = messagesContainerRef.current;
+                if (el) {
+                    el.scrollTop = el.scrollHeight;
+                    // force layout/paint
+                    void el.offsetHeight;
+                }
+                initialLoadRef.current = false;
+                // small delay to ensure browser painted the scrolled position
+                setTimeout(() => setInitialized(true), 20);
+            });
+
+            setHasMoreOlder(data.length === PAGE_SIZE);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchNewMessages = async (afterId) => {
+        if (!afterId) return [];
+        try {
+            const resp = await fetch(`${API_BASE_URL}/room/${name}/${password}/?after=${afterId}`, {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${authTokens?.access}` },
+            });
+            if (!resp.ok) return [];
+            const data = await resp.json();
+            return data;
+        } catch (err) {
+            console.error(err);
+            return [];
+        }
+    };
+
+    const loadOlderMessages = async () => {
+        if (isLoadingOlder || !hasMoreOlder) return;
+        const el = messagesContainerRef.current;
+        if (!el) return;
+
+        setIsLoadingOlder(true);
+
+        const oldestId = messages[0]?.id;
+        try {
+            const prevScrollHeight = el.scrollHeight;
+            const prevScrollTop = el.scrollTop;
+
+            const resp = await fetch(`${API_BASE_URL}/room/${name}/${password}/?before=${oldestId}&limit=${PAGE_SIZE}`, {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${authTokens?.access}` },
+            });
+            if (!resp.ok) {
+                setIsLoadingOlder(false);
+                return;
+            }
+            const data = await resp.json();
+            if (!data.length) {
+                setHasMoreOlder(false);
+                setIsLoadingOlder(false);
+                return;
+            }
+
+            setMessages((prev) => {
+                const next = [...data, ...prev];
+                messagesRef.current = next;
+                return next;
+            });
+
+            // preserve scroll position after prepending
+            requestAnimationFrame(() => {
+                const newScrollHeight = el.scrollHeight;
+                el.scrollTop = newScrollHeight - prevScrollHeight + prevScrollTop;
+            });
+
+            setHasMoreOlder(data.length === PAGE_SIZE);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsLoadingOlder(false);
+        }
+    };
+
+    const appendNewMessages = (newMsgs) => {
+        if (!newMsgs || !newMsgs.length) return;
+        const el = messagesContainerRef.current;
+        const prevScrollHeight = el?.scrollHeight || 0;
+        const prevScrollTop = el?.scrollTop || 0;
+
+        setMessages((prev) => {
+            const next = [...prev, ...newMsgs];
+            messagesRef.current = next;
+            return next;
+        });
+
+        requestAnimationFrame(() => {
+            const newScrollHeight = el?.scrollHeight || 0;
+            if (!el) return;
+            if (autoScroll) {
+                el.scrollTo({ top: newScrollHeight, behavior: 'smooth' });
+            } else {
+                // preserve user's viewport position
+                el.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
+            }
+        });
+    };
+
+    useEffect(() => {
+        if (!autoScroll) return;
+        const el = messagesContainerRef.current;
+        if (!el) return;
+        if (initialLoadRef.current) {
+            // Jump to bottom instantly on first load to avoid visible scroll animation
+            el.scrollTo({ top: el.scrollHeight });
+            initialLoadRef.current = false;
+        } else {
+            el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        }
+    }, [messages, autoScroll]);
+
+    // FETCH MESSAGES (paginated)
 
     useEffect(() => {
         if (!authTokens?.access) {
@@ -41,31 +194,28 @@ const Chat = () => {
             return;
         }
 
-        const fetchData = async () => {
-            try {
-                const response = await fetch(
-                    `${API_BASE_URL}/room/${name}/${password}/`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            Authorization: `Bearer ${authTokens.access}`,
-                        },
-                    }
-                );
+        let mounted = true;
 
-                const data = await response.json();
+        // load latest messages once
+        (async () => {
+            await fetchLatestMessages();
+        })();
 
-                setMessages(data);
-            } catch (error) {
-                navigateTo('/');
+        // polling for new messages
+        pollingRef.current = setInterval(async () => {
+            if (!mounted) return;
+            const lastId = messagesRef.current[messagesRef.current.length - 1]?.id;
+            if (!lastId) return;
+            const newMsgs = await fetchNewMessages(lastId);
+            if (newMsgs?.length) {
+                appendNewMessages(newMsgs);
             }
+        }, 1000);
+
+        return () => {
+            mounted = false;
+            if (pollingRef.current) clearInterval(pollingRef.current);
         };
-
-        fetchData();
-
-        const timer = setInterval(fetchData, 1000);
-
-        return () => clearInterval(timer);
 
     }, [name, password, authTokens, navigateTo]);
 
@@ -242,6 +392,7 @@ const Chat = () => {
                 video: true,
                 audio: true,
             });
+        localStreamRef.current = stream;
 
         if (localVideoRef.current) {
             localVideoRef.current.srcObject = stream;
@@ -270,22 +421,22 @@ const Chat = () => {
             pcRef.current = null;
         }
 
-        if (localVideoRef.current?.srcObject) {
+        if (localStreamRef.current) {
 
-            localVideoRef.current.srcObject
+            localStreamRef.current
                 .getTracks()
                 .forEach((track) => track.stop());
 
+            localStreamRef.current = null;
+        }
+        if (localVideoRef.current) {
             localVideoRef.current.srcObject = null;
         }
-
-        if (remoteVideoRef.current?.srcObject) {
-
-            remoteVideoRef.current.srcObject
-                .getTracks()
-                .forEach((track) => track.stop());
-
-            remoteVideoRef.current.srcObject = null;
+        if (remoteVideoRef.current) {
+            if (remoteVideoRef.current.srcObject) {
+                remoteVideoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+            }
+            remoteVideoRef.current = null;
         }
 
         setIsCalling(false);
@@ -510,9 +661,11 @@ const Chat = () => {
                 }
             );
 
-            setMessages((prev) =>
-                prev.filter((msg) => msg.id !== id)
-            );
+            setMessages((prev) => {
+                const next = prev.filter((msg) => msg.id !== id);
+                messagesRef.current = next;
+                return next;
+            });
 
         } catch (error) {
             console.error(error);
@@ -520,7 +673,7 @@ const Chat = () => {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
+        <div className="flex flex-col h-screen bg-gray-100 overflow-y-auto">
 
             {/* NAVBAR */}
 
@@ -755,9 +908,11 @@ const Chat = () => {
 
             <div
                 id="messagesContainer"
-                className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 bg-gray-50"
+                ref={messagesContainerRef}
+                onScroll={handleScroll}
+                style={{ visibility: initialized ? 'visible' : 'hidden' }}
+                className={`flex-1 overflow-y-auto p-3 md:p-4 space-y-3 bg-gray-50 ${initialized ? 'scroll-smooth' : ''}`}
             >
-
                 {messages.map((message) => (
 
                     <div
